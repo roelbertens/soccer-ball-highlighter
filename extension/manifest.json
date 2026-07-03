@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Soccer Ball Highlighter",
+  "version": "0.2.0",
+  "description": "Tracks the ball in football streams with a detector + tracker and draws a bright ring around it, helping people with low vision follow the game.",
+  "web_accessible_resources": [
+    {
+      "resources": ["models/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["lib/tf.min.js", "content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}

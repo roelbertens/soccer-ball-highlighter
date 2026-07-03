@@ -1,0 +1,25 @@
+[project]
+name = "ball-highlighter-training"
+version = "0.2.0"
+description = "Training + labeling pipeline for the Soccer Ball Highlighter (YOLOv8)"
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # training, labeling, evaluation
+    "ultralytics>=8.4",
+    "opencv-python>=4.9",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# model conversion for the extension: .pt -> ONNX -> SavedModel -> tfjs
+# (heavy and version-picky; only needed for build_size.sh)
+export = [
+    "onnx>=1.16",
+    "onnx2tf>=1.26",
+    "tensorflow>=2.16",
+    "tensorflowjs>=4.20",
+]
+
+[tool.uv]
+# torch/tensorflow wheels for Apple Silicon come straight from PyPI; no extras needed

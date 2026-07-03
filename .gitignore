@@ -1,0 +1,26 @@
+# Broadcast-derived data: copyrighted, never commit
+training/videos/
+training/data/*
+!training/data/labels/
+training/data/labels/*/labels_backup_*/
+
+# Weights & converted models: large and rebuildable (attach to a GitHub Release instead)
+*.pt
+*.tflite
+*.onnx
+extension/models/
+training/model_*/
+training/sm_*/
+training/runs/
+training/calibration_*.npy
+
+# generated
+training/LEADERBOARD.md
+
+# junk
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+.claude/

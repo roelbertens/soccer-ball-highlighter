@@ -1,0 +1,56 @@
+# Model-setup experiments. Run: caffeinate -i python pipeline/run_experiments.py
+# Each entry: train -> eval (custom metrics + mAP) -> LEADERBOARD.md row.
+# 'base' is either a .pt (fine-tune) or "arch.yaml+init.pt" (new head, pretrained backbone).
+#
+# Rationale:
+#  e1  reproduces the current recipe = reference point
+#  e2  yolov8n from COCO: is the football-players model actually a better start?
+#  e3  yolov8s: does capacity help more than resolution?
+#  e4  P2 head: extra high-res detection layer, made for tiny objects <- main bet
+#  e5  n @960: can we trade resolution for speed and keep accuracy? (Chromebook!)
+#
+# batch sizes are conservative for 16GB Apple Silicon; raise if memory allows.
+
+defaults:
+  data: data/dataset/data.yaml
+  epochs: 80
+  patience: 20
+  device: mps
+  workers: 4
+  eval_imgsz: 960
+  hyp:
+    mosaic: 1.0
+    close_mosaic: 15
+    scale: 0.5
+    translate: 0.1
+    fliplr: 0.5
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 0.0
+
+experiments:
+  - name: e1_players_1280
+    base: players.pt
+    imgsz: 1280
+    batch: 6
+
+  - name: e2_v8n_1280
+    base: yolov8n.pt
+    imgsz: 1280
+    batch: 8
+
+  - name: e3_v8s_960
+    base: yolov8s.pt
+    imgsz: 960
+    batch: 8
+
+  - name: e4_v8n_p2_1280
+    base: yolov8-p2.yaml+yolov8n.pt
+    imgsz: 1280
+    batch: 4
+
+  - name: e5_v8n_960
+    base: yolov8n.pt
+    imgsz: 960
+    batch: 12
