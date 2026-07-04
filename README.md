@@ -72,6 +72,53 @@ Most of the quality here comes from labels, not architecture. The loop:
    mAP is reported but doesn't decide.
 7. `build_size.sh` — export the winner, drop it into `extension/models/`.
 
+## Model experiments (`experiments.yaml`)
+
+`run_experiments.py` trains a small matrix of setups on the *same* data and
+ranks them. What varies is the starting weights, the model size, and the input
+resolution — so each row answers one question:
+
+| id | name | starts from | imgsz | question it answers |
+|----|------|-------------|-------|---------------------|
+| e1 | `players_1280` | `players.pt` (football-broadcast model) | 1280 | **Reference row** — the current recipe. Everything is measured against it. |
+| e2 | `v8n_1280` | `yolov8n.pt` (generic COCO) | 1280 | Is the football model actually a better start than plain COCO nano? |
+| e3 | `v8s_960` | `yolov8s.pt` (small) | 960 | Does more model *capacity* help more than more resolution? |
+| e4 | `v8n_p2_1280` | nano + **P2 head** | 1280 | The main bet: P2 adds a high-res detection layer built for *tiny* objects — the far-away, few-pixel ball. |
+| e5 | `v8n_960` | `yolov8n.pt` | 960 | Can we trade resolution for *speed* and keep accuracy? The Chromebook-friendly recipe (currently shipped). |
+
+The run is resumable (an experiment whose `best.pt` exists is only re-evaluated,
+not retrained), so it survives Ctrl+C and can run overnight. Fine-tuning at 1280
+on Apple Silicon is slow — budget hours per experiment, not minutes.
+
+## Evaluation: task metrics, not mAP
+
+Two choices make the leaderboard reflect what the extension actually does, and
+they matter more than any hyperparameter:
+
+- **Leave-one-match-out validation.** `--val-match` holds out a *whole* match
+  the model never trains on. The tempting alternative — a random or 20%-tail
+  split within each match — leaks that match's stadium, kit, and broadcast look
+  into validation, so the score flatters the model. A held-out match is the
+  honest generalization test, and the number is noisier *because* it's honest:
+  treat small (≈0.03) swings on a single match as noise, not signal.
+- **`highlight_score = det_rate − 0.5·false_ring_rate`, at realtime settings.**
+  Evaluation runs a *single* model at the extension's live config (imgsz 960,
+  conf 0.10) — not the offline ensemble — so the leaderboard predicts field
+  behaviour. `det_rate` = fraction of ball frames located within 24 px;
+  `false_ring_rate` = fraction of *no-ball* frames where a ring is wrongly
+  drawn. False rings are weighted because they're the worse failure for the
+  viewer: a *miss* is bridged by the tracker/coast for ~180 ms and barely
+  shows, but a ring stuck on a white shirt is a visible, distracting error.
+  **mAP is reported but never decides** — it rewards box-IoU precision the ring
+  doesn't care about, and it doesn't move with `highlight_score` here.
+
+A practical consequence worth knowing: better *labels* don't always raise
+`det_rate`. Much of the label work (box-size fixes, mined negatives) improves
+IoU and false-ring behaviour, while `det_rate` only tracks whether the ball's
+*center* is found — so a big labeling effort can lift mAP and calm false rings
+while leaving `det_rate` flat. Judge a change by the metric it was meant to
+move.
+
 ## Requirements
 
 Python via [uv](https://docs.astral.sh/uv/) — `training/pyproject.toml` defines
