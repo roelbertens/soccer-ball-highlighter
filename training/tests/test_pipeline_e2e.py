@@ -159,9 +159,12 @@ def main():
     open(os.path.join(root, 'fake.pt'), 'w').close()
     for name in ('smoke1', 'smoke2'):
         sh(root, env, 'pipeline/eval_model.py', '--weights', 'fake.pt',
-           '--name', name, '--device', 'cpu', '--no-map')
+           '--name', name, '--imgsz', '800', '960', '1280',
+           '--device', 'cpu', '--no-map')
     lb = json.load(open(os.path.join(root, 'runs/leaderboard.json')))
-    check('eval: leaderboard has 2 rows', len(lb) == 2)
+    # one row per (name, eval_on, imgsz): 2 models x 3 resolutions
+    check('eval: leaderboard has 6 rows (2 models x 3 res)', len(lb) == 6)
+    check('eval: 3 distinct resolutions', len({r['imgsz'] for r in lb}) == 3)
     check('eval: det_rate > 0', lb[0]['metrics']['det_rate'] > 0,
           f"det_rate {lb[0]['metrics']['det_rate']}")
     check('eval: LEADERBOARD.md written',

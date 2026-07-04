@@ -17,7 +17,7 @@ defaults:
   patience: 20
   device: mps
   workers: 4
-  eval_imgsz: 960
+  eval_imgsz: [800, 960, 1280]   # eval + deploy resolutions (one row each)
   hyp:
     mosaic: 1.0
     close_mosaic: 15

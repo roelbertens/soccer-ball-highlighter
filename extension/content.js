@@ -31,7 +31,7 @@
     spotlight: false,
     // detection
     detWidth: 480,          // width of the tracker canvas (small = fast)
-    detRes: 800,            // YOLO detection resolution (512/800/1280); higher = more accurate, heavier
+    detRes: 800,            // YOLO detection resolution (800/960/1280); higher = more accurate, heavier
     minScore: 0.10,         // YOLO threshold (balls below this score are ignored)
     detectMs: 60,           // minimum time between detections (detector is primary now)
     // tracker (motion/brightness tracker; can drift to bright shirts -> off by default)
@@ -55,7 +55,7 @@
   let gray = null, prevGray = null, gw = 0, gh = 0;
 
   // ---- YOLOv8 model (TensorFlow.js GraphModels in models/<res>/) -----
-  const DET_SIZES = [512, 800, 1280];      // available detection resolutions (one model each)
+  const DET_SIZES = [800, 960, 1280];      // available detection resolutions (one model each)
   const BALL_CH = 4;                        // output channel of the "ball" class (4 box + class 0 = ball)
   const yoloCanvas = document.createElement("canvas");
   const yctx = yoloCanvas.getContext("2d", { willReadFrequently: true });

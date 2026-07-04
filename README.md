@@ -25,7 +25,7 @@ doesn't flicker. If everything fails, press **L** and click the ball — manual
 lock, always works. Details and keyboard shortcuts: `extension/README.md`.
 
 The model ships as fixed-size TensorFlow.js GraphModels at three input
-resolutions (512 / 800 / 1280), selectable at runtime: YOLO heads don't convert
+resolutions (800 / 960 / 1280), selectable at runtime: YOLO heads don't convert
 with dynamic input shapes, so it's one model per resolution.
 
 ## Repository layout

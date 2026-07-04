@@ -41,8 +41,8 @@ if [[ "$STAGE" == "all" || "$STAGE" == "train" ]]; then
   cat LEADERBOARD.md
   echo ""
   echo ">>> Export the winner for the extension:"
-  echo ">>>   bash build_size.sh 512 runs/<winner>/weights/best.pt"
   echo ">>>   bash build_size.sh 800 runs/<winner>/weights/best.pt"
+  echo ">>>   bash build_size.sh 960 runs/<winner>/weights/best.pt"
   echo ">>>   bash build_size.sh 1280 runs/<winner>/weights/best.pt"
   echo ">>> then copy model_*/ into ../ball-highlighter-v2/models/"
 fi

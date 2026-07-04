@@ -52,28 +52,32 @@ for ex in cfg['experiments']:
             print(f'!! {name}: training produced no best.pt, skipping eval')
             continue
 
-    # evaluate at realtime-ish settings
+    # evaluate at each deploy resolution (one leaderboard row per size)
+    eval_sizes = dfl.get('eval_imgsz', [800, 960, 1280])
+    if not isinstance(eval_sizes, list):
+        eval_sizes = [eval_sizes]
+    map_res = 960 if 960 in eval_sizes else eval_sizes[0]   # mAP once, not per size
     for match in ([None] + ([a.eval_match] if a.eval_match else [])):
-        model = YOLO(best)
         pairs = ev.collect_pairs(match=match)
         if not pairs:
             continue
-        imgsz = dfl.get('eval_imgsz', 960)
-        m = ev.eval_frames(model, pairs, imgsz, 0.10, dfl['device'], 24.0)
-        if not match:
-            try:
-                v = model.val(data=os.path.join(ROOT, dfl['data']),
-                              imgsz=imgsz, device=dfl['device'], verbose=False)
-                m['mAP50'] = round(float(v.box.map50), 4)
-                m['mAP50_95'] = round(float(v.box.map), 4)
-            except Exception as e:
-                print('  (val failed:', str(e)[:80], ')')
-        ev.update_leaderboard({
-            'name': name + (f'@{match}' if match else ''),
-            'weights': best, 'imgsz': imgsz, 'conf': 0.10,
-            'eval_on': match or 'val',
-            'date': datetime.datetime.now().isoformat(), 'metrics': m})
-        print(f'   {name} ({match or "val"}): {json.dumps(m)}')
+        model = YOLO(best)
+        for imgsz in eval_sizes:
+            m = ev.eval_frames(model, pairs, imgsz, 0.10, dfl['device'], 24.0)
+            if not match and imgsz == map_res:
+                try:
+                    v = model.val(data=os.path.join(ROOT, dfl['data']),
+                                  imgsz=imgsz, device=dfl['device'], verbose=False)
+                    m['mAP50'] = round(float(v.box.map50), 4)
+                    m['mAP50_95'] = round(float(v.box.map), 4)
+                except Exception as e:
+                    print('  (val failed:', str(e)[:80], ')')
+            ev.update_leaderboard({
+                'name': name + (f'@{match}' if match else ''),
+                'weights': best, 'imgsz': imgsz, 'conf': 0.10,
+                'eval_on': match or 'val',
+                'date': datetime.datetime.now().isoformat(), 'metrics': m})
+            print(f'   {name} ({match or "val"}) @{imgsz}: {json.dumps(m)}')
 
 print('\nDone. See LEADERBOARD.md. Export the winner with: '
-      'bash build_size.sh 512 runs/<name>/weights/best.pt  (and 800, 1280)')
+      'bash build_size.sh 800 runs/<name>/weights/best.pt  (and 960, 1280)')

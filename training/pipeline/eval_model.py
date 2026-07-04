@@ -100,7 +100,10 @@ def update_leaderboard(entry):
     rows = []
     if os.path.exists(LB_JSON):
         rows = json.load(open(LB_JSON))
-    rows = [r for r in rows if r['name'] != entry['name']] + [entry]
+    # dedup by (name, eval_on, imgsz) so one model can have a row per resolution
+    def key(r):
+        return (r['name'], r.get('eval_on', 'val'), r.get('imgsz'))
+    rows = [r for r in rows if key(r) != key(entry)] + [entry]
     rows.sort(key=lambda r: -(r['metrics'].get('highlight_score') or 0))
     os.makedirs(os.path.dirname(LB_JSON), exist_ok=True)
     json.dump(rows, open(LB_JSON, 'w'), indent=1)
@@ -124,8 +127,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--weights', required=True)
     ap.add_argument('--name', default=None)
-    ap.add_argument('--imgsz', type=int, default=960,
-                    help='realtime-ish eval size (extension uses 512-1280)')
+    ap.add_argument('--imgsz', type=int, nargs='+', default=[800, 960, 1280],
+                    help='eval size(s); one leaderboard row per size '
+                         '(these match the extension deploy options)')
     ap.add_argument('--conf', type=float, default=0.10,
                     help='same default threshold as the extension')
     ap.add_argument('--radius-px', type=float, default=24.0)
@@ -138,27 +142,30 @@ def main():
     from ultralytics import YOLO
     model = YOLO(a.weights)
     pairs = collect_pairs(match=a.match)
-    print(f'Evaluating {a.weights} on {len(pairs)} frames '
-          f'({a.match or "val split"}) @ imgsz={a.imgsz} conf={a.conf}')
-    metrics = eval_frames(model, pairs, a.imgsz, a.conf, a.device, a.radius_px)
-
-    if not a.no_map and not a.match:
-        try:
-            v = model.val(data=os.path.join(ROOT, 'data', 'dataset', 'data.yaml'),
-                          imgsz=a.imgsz, device=a.device, verbose=False)
-            metrics['mAP50'] = round(float(v.box.map50), 4)
-            metrics['mAP50_95'] = round(float(v.box.map), 4)
-        except Exception as e:
-            print('  (ultralytics val failed:', str(e)[:80], ')')
-
-    print(json.dumps(metrics, indent=2))
-    entry = {'name': a.name or os.path.basename(os.path.dirname(
-                 os.path.dirname(a.weights)) or a.weights),
-             'weights': a.weights, 'imgsz': a.imgsz, 'conf': a.conf,
-             'eval_on': a.match or 'val',
-             'date': datetime.datetime.now().isoformat(), 'metrics': metrics}
-    update_leaderboard(entry)
-    return metrics
+    name = a.name or os.path.basename(os.path.dirname(
+        os.path.dirname(a.weights)) or a.weights)
+    sizes = a.imgsz if isinstance(a.imgsz, list) else [a.imgsz]
+    map_res = 960 if 960 in sizes else sizes[0]   # mAP once, not per size
+    out = {}
+    for imgsz in sizes:
+        print(f'Evaluating {a.weights} on {len(pairs)} frames '
+              f'({a.match or "val split"}) @ imgsz={imgsz} conf={a.conf}')
+        metrics = eval_frames(model, pairs, imgsz, a.conf, a.device, a.radius_px)
+        if not a.no_map and not a.match and imgsz == map_res:
+            try:
+                v = model.val(data=os.path.join(ROOT, 'data', 'dataset', 'data.yaml'),
+                              imgsz=imgsz, device=a.device, verbose=False)
+                metrics['mAP50'] = round(float(v.box.map50), 4)
+                metrics['mAP50_95'] = round(float(v.box.map), 4)
+            except Exception as e:
+                print('  (ultralytics val failed:', str(e)[:80], ')')
+        print(json.dumps(metrics, indent=2))
+        update_leaderboard({
+            'name': name, 'weights': a.weights, 'imgsz': imgsz, 'conf': a.conf,
+            'eval_on': a.match or 'val',
+            'date': datetime.datetime.now().isoformat(), 'metrics': metrics})
+        out[imgsz] = metrics
+    return out
 
 
 if __name__ == '__main__':

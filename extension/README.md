@@ -36,10 +36,13 @@ The extension uses a **football-trained YOLOv8 model** (ball + players in the
 base data; only the ball is ringed). In the panel you pick the resolution the
 detector runs at:
 
-- **512px** — fastest; pick this if the video stutters on a Chromebook.
-- **800px** — balance between speed and accuracy (default).
+- **800px** — fastest; pick this if the video stutters on a Chromebook (default).
+- **960px** — balance between speed and accuracy.
 - **1280px** — most accurate for the small, fast ball, but heaviest. Only
   smooth on a fast desktop; probably too slow on a Chromebook.
+
+These are also the resolutions the training pipeline evaluates at, so the
+leaderboard predicts what each panel setting will do.
 
 Switching briefly loads a different model (~1 s).
 
@@ -68,7 +71,7 @@ Switching briefly loads a different model (~1 s).
 manifest.json          – extension config (MV3)
 content.js             – logic; runDetector() = YOLOv8 block, trackStep() = the tracker
 lib/tf.min.js          – TensorFlow.js (patched: no eval, MV3-proof)
-models/512|800|1280/   – YOLOv8 models (TensorFlow.js GraphModel per resolution, float16)
+models/800|960|1280/   – YOLOv8 models (TensorFlow.js GraphModel per resolution, float16)
 ```
 
 ## Rebuilding the model (developer)
@@ -80,7 +83,7 @@ models are built with the scripts in `../training/`:
 
 ```bash
 # per resolution: .pt -> ONNX (fixed) -> TF SavedModel (onnx2tf) -> TFJS GraphModel (float16)
-bash build_size.sh 512 <weights.pt>    # and 800, 1280
+bash build_size.sh 800 <weights.pt>    # and 960, 1280
 ```
 
 Note: `format='tfjs'` in ultralytics was replaced by LiteRT as of 8.4.83, and
