@@ -38,6 +38,7 @@ training/             everything to (re)build the model
   build_size.sh       .pt -> ONNX -> SavedModel -> tfjs GraphModel, fixed size
   annotator.py        local web tool to create/correct labels frame by frame
   find_errors.py      collect model-vs-label disagreements for review (legacy)
+  EVALUATION.md       metric definitions + experiment recipe details
   pipeline/           automated data-centric loop:
     extract_frames.py   video -> frames
     autolabel.py        expensive offline ensemble labels unlabeled frames
@@ -89,6 +90,10 @@ resolution — so each row answers one question:
 The run is resumable (an experiment whose `best.pt` exists is only re-evaluated,
 not retrained), so it survives Ctrl+C and can run overnight. Fine-tuning at 1280
 on Apple Silicon is slow — budget hours per experiment, not minutes.
+
+> **Full details in [`training/EVALUATION.md`](training/EVALUATION.md)** — the
+> exact hyperparameters and augmentations each recipe uses, what the P2 head is,
+> the metric formulas, and the evaluation settings.
 
 ## Evaluation: task metrics, not mAP
 
